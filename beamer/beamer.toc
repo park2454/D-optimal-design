@@ -1,0 +1,6 @@
+\beamer@sectionintoc {1}{Introduction}{3}{0}{1}
+\beamer@sectionintoc {2}{Optimal Design}{5}{0}{2}
+\beamer@sectionintoc {3}{Particle Swarm Optimization}{13}{0}{3}
+\beamer@sectionintoc {4}{Application of PSO in Optimal Design}{18}{0}{4}
+\beamer@sectionintoc {5}{Examples}{21}{0}{5}
+\beamer@sectionintoc {6}{Discussion}{33}{0}{6}

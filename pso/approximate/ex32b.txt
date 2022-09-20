@@ -1,0 +1,183 @@
+using LinearAlgebra
+using Random
+using NPZ
+using Dates
+
+# projection function onto the design space
+function proj(x)
+    a = x[1:p*k]
+    b = x[(1:k) .+ (p*k)]
+    
+    a = reshape(a,p,k)
+    a = max.( a, design[:,1] )
+    a = min.( a, design[:,2] )
+    a = reshape(a,p*k)
+    
+    u = sort(b, rev=true)
+    j = k
+    while true
+        if u[j] + 1/j*(1-cumsum(u)[j]) > 0
+            break
+        end
+        j -= 1
+    end
+    lambda = 1/j*(1-cumsum(u)[j])
+    b = max.(b .+ lambda,0)
+    b = 0.5*b
+    
+    return [a;b]
+end
+
+function proj2(x)
+    x = max.(x,design2[:,1])
+    x = min.(x,design2[:,2])
+    return x
+end
+
+function pso2(xx,lp2)
+    #initialize
+    #srand(1992)
+    path2 = zeros(niter2)
+    tau2 = 0.9:(-0.5/niter2):0.4
+    v2 = zeros(nptc2, p2)
+    ptc2 = rand(nptc2, p2)
+    for j2 in 1:p2
+            ptc2[:,j2] = (design2[j2,2] - design2[j2,1]) * ptc2[:,j2] .+ design2[j2,1]
+    end
+    pbesth2 = zeros(nptc2)
+    pbest2 = ptc2
+    for j2 in 1:nptc2
+        pbesth2[j2] = obj(xx,pbest2[j2,:])
+    end
+    gbesth2 = findmax(pbesth2)[1]
+    gbest2 = pbest2[findmax(pbesth2)[2],:]
+
+    #iterate
+    for i2 in 1:niter2 # iteration number
+            g12 = rand(p2)
+            g22 = rand(p2)
+        for j2 in 1:nptc2 # particle number
+            v2[j2,:] = tau2[i2] .*v2[j2,:] + lp2 .* g12 .*(pbest2[j2,:]-ptc2[j2,:]) + lp2 .* g22 .*(gbest2-ptc2[j2,:])
+            ptc2[j2,:] = ptc2[j2,:] + v2[j2,:]
+            ptc2[j2,:] = proj2(ptc2[j2,:])
+            fit2 = obj(xx,ptc2[j2,:])
+            if fit2 > gbesth2
+                gbesth2 = pbesth2[j2] = fit2
+                gbest2 = pbest2[j2,:] = ptc2[j2,:]
+            elseif fit2 > pbesth2[j2]
+                pbesth2[j2] = fit2
+                pbest2[j2,:] = ptc2[j2,:]
+            end
+        end
+        path2[i2] = gbesth2
+    end
+    return [gbesth2; gbest2; path2]
+end
+
+function pso(lp,lp2)
+    #initialize
+    #srand(1992)
+    path = zeros(niter)
+    tau = 0.9:(-0.5/niter):0.4
+    v = zeros(nptc, p*k+k)
+    x = rand(nptc,p*k)
+    for j in 1:p
+        x[:,p*(1:k).+(j-p)] = (design[j,2]-design[j,1]) * x[:,p*(1:k).+(j-p)] .+ design[j,1]
+    end    
+    w = randexp(nptc,k)
+    for j in 1:nptc
+            w[j,:] = 0.5*w[j,:] ./ sum(w[j,:])
+    end
+    ptc = hcat(x,w)
+    pbest = ptc
+    pbesth = zeros(nptc)
+    for j in 1:nptc
+        pbesth[j] = pso2(pbest[j,:],lp2)[1]
+    end
+    gbesth = findmin(pbesth)[1]
+    gbest = pbest[findmin(pbesth)[2],:]
+    
+    tbest = zeros(p2)
+    
+    #iterate
+    for i in 1:niter # iteration number
+            g1 = rand(p*k+k)
+            g2 = rand(p*k+k)
+        for j in 1:nptc # particle number
+            v[j,:] = tau[i] .*v[j,:] + lp .* g1 .*(pbest[j,:]-ptc[j,:]) + lp .* g2 .*(gbest-ptc[j,:])
+            ptc[j,:] = ptc[j,:] + v[j,:]
+            ptc[j,:] = proj(ptc[j,:])
+            fit = pso2(ptc[j,:],lp2)
+            if fit[1] < gbesth
+                gbest = pbest[j,:] = ptc[j,:]
+                gbesth = pbesth[j] = fit[1]
+                tbest = fit[(1:p2) .+ 1]
+            elseif fit[1] < pbesth[j]
+                pbest[j,:] = ptc[j,:]
+                pbesth[j] = fit[1]
+            end
+        end
+        path[i] = gbesth
+        print(".")
+    end
+    
+    return [gbesth; gbest; tbest; path]
+end
+
+function obj(eta, theta)
+    mat = zeros(2,2)
+    b = theta[2]
+    a = theta[1]
+    for i in 1:k
+        m0 = zeros(2)
+        s = eta[i]
+        w = eta[i+k]
+        m0[1] = b
+        m0[2] = -s+a
+        p = 1/(1+exp(-b*(s-a))) 
+        mat = mat + w * p*(1-p) * m0*m0' 
+    end
+    for i in 1:k
+        m0 = zeros(2)
+        s = (design2[1,2]+design2[1,1]) - eta[i]
+        w = eta[i+k]
+        m0[1] = b
+        m0[2] = -s+a
+        p = 1/(1+exp(-b*(s-a))) 
+        mat = mat + w * p*(1-p) * m0*m0' 
+    end
+    if det(mat) < 10.0^-6
+        return Inf
+    else
+        return -log(det(mat))
+    end
+end
+
+# outer loop
+k = 3
+nptc = 512
+niter = 200
+design = [-1.5 5]
+p = size(design)[1]
+
+# inner loop
+nptc2 = 256
+niter2 = 100
+design2 = [0 3.5 ; 1 3.5]
+p2 = size(design2)[1]
+
+## simulation study
+nsim = 1
+
+output = zeros(nsim, 1+p*k+k+p2+niter)
+
+start = Dates.Time(Dates.now())
+println("##### Simulation starts at $(start)")
+for rp in 1:nsim
+    output[rp,:] = pso(2,2)
+    npzwrite("ex32b_sym.npy",output)
+    println("##### Simulation $(rp)/$(nsim) complete, $(Dates.Time(Dates.now()))")
+end
+
+println("########## SIMULATION FINISHED, CHECK THE RESULTS")
+

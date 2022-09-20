@@ -1,0 +1,629 @@
+% Copyright 2004 by Till Tantau <tantau@users.sourceforge.net>.
+%
+% In principle, this file can be redistributed and/or modified under
+% the terms of the GNU Public License, version 2.
+%
+% However, this file is supposed to be a template to be modified
+% for your own needs. For this reason, if you use this file as a
+% template and not specifically distribute it as part of a another
+% package/program, I grant the extra permission to freely copy and
+% modify this file as you see fit and even to delete this copyright
+% notice. 
+
+\documentclass{beamer}
+
+% There are many different themes available for Beamer. A comprehensive
+% list with examples is given here:
+% http://deic.uab.es/~iblanes/beamer_gallery/index_by_theme.html
+% You can uncomment the themes below if you would like to use a different
+% one:
+%\usetheme{AnnArbor}
+%\usetheme{Antibes}
+%\usetheme{Bergen}
+%\usetheme{Berkeley}
+%\usetheme{Berlin}
+%\usetheme{Boadilla}
+%\usetheme{boxes}
+%\usetheme{CambridgeUS}
+%\usetheme{Copenhagen}
+%\usetheme{Darmstadt}
+%\usetheme{default}
+%\usetheme{Frankfurt}
+%\usetheme{Goettingen}
+%\usetheme{Hannover}
+%\usetheme{Ilmenau}
+%\usetheme{JuanLesPins}
+%\usetheme{Luebeck}
+\usetheme{Madrid}
+%\usetheme{Malmoe}
+%\usetheme{Marburg}
+%\usetheme{Montpellier}
+%\usetheme{PaloAlto}
+%\usetheme{Pittsburgh}
+%\usetheme{Rochester}
+%\usetheme{Singapore}
+%\usetheme{Szeged}
+%\usetheme{Warsaw}
+%\usepackage{enumitem}
+
+\setbeamertemplate{items}[circle]
+\usepackage{tikz}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% frames
+
+%\begin{frame}{Blocks}
+%\begin{block}{Block Title}
+%You can also highlight sections of your presentation in a block, with it's own title
+%\end{block}
+%\begin{theorem}
+%There are separate environments for theorems, examples, definitions and proofs.
+%\end{theorem}
+%\begin{example}
+%Here is an example of an example block.
+%\end{example}
+%\end{frame}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% New Command
+
+% Contradiction
+\newcommand{\contradiction}{%
+  \ensuremath{{(\Rightarrow\mspace{-2mu}\Leftarrow)}}%
+}
+
+% Norm
+\newcommand{\norm}[1]{\left\lVert#1\right\rVert}
+
+% Distance
+\newcommand{\dist}{\text{dist}}
+
+% Proximal map
+\newcommand{\prox}{\text{prox}}
+
+% argmax argmin
+\DeclareMathOperator*{\argmax}{argmax}
+\DeclareMathOperator*{\argmin}{argmin}
+
+% enumerate numbering
+\newcommand\mynum[1]{%
+  \usebeamercolor{enumerate item}%
+  \tikzset{beameritem/.style={circle,inner sep=0,minimum size=2ex,text=enumerate item.bg,fill=enumerate item.fg,font=\footnotesize}}%
+  \tikz[baseline=(n.base)]\node(n)[beameritem]{#1};%
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\title{Application of Particle Swarm Optimization in D-optimal Design}
+
+% A subtitle is optional and this may be deleted
+%\subtitle{MM Optimization Algorithms}
+
+\author{Park, Sungmin}
+% - Give the names in the same order as the appear in the paper.
+% - Use the \inst{?} command only if the authors have different
+%   affiliation.
+
+\institute[SNU] % (optional, but mostly needed)
+{
+  Department of Statistics\\
+  Seoul National University
+}
+% - Use the \inst command only if there are several affiliations.
+% - Keep it simple, no one is interested in your street address.
+
+\date{15 MAR 19}
+% - Either use conference name or its abbreviation.
+% - Not really informative to the audience, more for people (including
+%   yourself) who are reading the slides online
+
+\subject{Computational Statistics}
+% This is only inserted into the PDF information catalog. Can be left
+% out. 
+
+% If you have a file called "university-logo-filename.xxx", where xxx
+% is a graphic format that can be processed by latex or pdflatex,
+% resp., then you can add a logo as follows:
+
+% \pgfdeclareimage[height=0.5cm]{university-logo}{university-logo-filename}
+% \logo{\pgfuseimage{university-logo}}
+
+% Delete this, if you do not want the table of contents to pop up at
+% the beginning of each subsection:
+%\AtBeginSubsection[]
+\AtBeginSection[]
+{
+  \begin{frame}<beamer>{Outline}
+    \tableofcontents[currentsection,currentsubsection]
+  \end{frame}
+}
+
+% Let's get started
+\begin{document}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\begin{frame}{Outline}
+  \tableofcontents
+  % You might wish to add the option [pausesections]
+\end{frame}
+
+% Section and subsections will appear in the presentation overview
+% and table of contents.
+
+\section{Introduction}
+\begin{frame}
+  Locally optimal design for nonlinear model is an optimization problem where analytical formula for the design is rarely available.\\
+  \vspace{3mm}
+  This presentation provides,
+  \begin{itemize}
+    \item a brief introduction to locally optimal design and particle swarm optimization.
+    \item a demonstation of how particle swarm optimization can be successfully implemented in locally optimal design via various examples.
+  \end{itemize}
+\end{frame}
+
+\section{Optimal Design}
+
+%\subsection{Regression}
+
+%% 1
+\begin{frame}{Research Design}%{Optional Subtitle}
+  Given an experimental research model, a researcher must decide\\
+  \begin{enumerate}
+    \item \# of combination levels of indep. variables (\# of design points)
+    \item values for these design points
+    \item \# of subjects to assign at each design points
+  \end{enumerate}
+  \vspace{3mm}
+  For example, consider a medical study to test the effect of a new drug.\\
+  The researcher must decide,
+  \begin{enumerate}
+    \item \# of dose levels to be administered
+    \item values for each dose level
+    \item \# of patients to be assigned to each dose level
+  \end{enumerate}
+\end{frame}
+
+%% 2
+\begin{frame}{Exact vs. Approximate Design}%{Optional Subtitle}
+  There are two types of characterization for the design problem:\\
+  Exact vs. Approximate\\
+  \vspace{3mm}
+  Both specifies \mynum{1} \# of combination levels and \mynum{2} values for these levels.\\
+  \vspace{6mm}
+  Two types of design differ in \mynum{3},\\
+  \vspace{3mm}
+  Exact design specifies the \emph{exact \#} of subjects for each design points.\\
+  \vspace{3mm}
+  Approximate design specifies the \emph{proportion} of subjects for design points.\\
+  \vspace{6mm}
+  In this presentation, we focus on approximate design.
+\end{frame}
+
+%% 3
+\begin{frame}{Notation}%{Optional Subtitle}
+  \begin{itemize}
+    \item $\mathcal{P}(\cdot)$: model
+    \item $\theta$: parameter
+    \item $k$: \# of distinct design points
+    \item $x_i, 1 \leq i \leq k$: design points
+    \item $w_i, 1 \leq i \leq k$: proportion of subjects assigned to design point $x_i$
+    \item $\xi_k = \left( x_1, \ldots , x_k, w_1, \ldots , w_k \right)$: k-point approximate design
+  \end{itemize}
+\end{frame}
+
+%% 4
+\begin{frame}{Optimal Design, $D$-optimal}
+    A good design is one that produces estimates (usually MLE) with smaller variance or confidence ellipsoid.\\
+    \vspace{3mm}
+    Among many optimality criteria, $D$-optimality criterion is widely used.\\
+    \vspace{9mm}
+    $D$-optimality criterion:
+    \begin{flalign}
+      \nonumber & \text{Given a model } \mathcal{P}(\theta) \text{ and the \# of design points } k,\\
+      \nonumber & \xi_k^{*} \text{ is }D \text{-optimal if } \xi_k^{*} =  \argmin_{\xi_k} \left| Var \left( \hat{\theta}(\xi) \right) \right|
+    \end{flalign}
+\end{frame}
+
+%% 5
+\begin{frame}{Optimal Design, $c$-optimal}
+  There is a variant of $D$-optimal design called $c$-optimal design.\\
+  \vspace{9mm}
+  $c$-optimality criterion for a function of interest $c(\theta)$:
+  \begin{flalign}
+    \nonumber & \text{Given a model } \mathcal{P}(\theta) \text{ and the \# of design points } k\\
+    \nonumber & \xi_k^{*} \text{ is }c \text{-optimal if } \xi_k^{*} =  \argmin_{\xi_k} \left| Var \left[ c \left( \hat{\theta}(\xi)  \right) \right] \right|,\\
+    \nonumber & \text{with }Var \left[ c \left( \hat{\theta}(\xi)  \right) \right] \approx \left( \frac{\partial c(\theta)}{\partial \theta}\right) Var\left(\hat{\theta}(\xi)\right) \left( \frac{\partial c(\theta)}{\partial \theta}\right)^T
+  \end{flalign}
+  $D$- and $c$-optimal design using MLE involves determinant and matrix inversion complicating the optimization problem.\\
+  The design solutions are locally optimal because they depend on the choice of parameter $\theta$.
+\end{frame}
+
+%% 6
+\begin{frame}{Choice of $k$}%{Optional Subtitle}
+  Choice of $k$ is usually pre-specified before the search for optimal design.\\
+  \vspace{3mm}
+  In order to estimate $p$ parameters in any model, at least $p$ distinct design points are required.\\
+  \vspace{3mm}
+  \textit{Carath$\acute{e}$odory's theorem} provides an upper bound on the number of design points needed for an optimal design.\\
+  \vspace{3mm}
+  For many design problems with $p$ parameters,
+  $$ p \le \text{ Optimal number of distinct design points}  \le \frac{p(p+1)}{2} $$
+  Start with $k=p$.\\
+  If $k=p$ fails to provide an optimal design, try $k=p+1$ and so on ...
+  \end{frame}
+
+%% 7
+\begin{frame}{Equivalence Theorem}
+  Equivalence Theorem provides a method to verify whether the approximate design solution is optimal.\\
+  \vspace{3mm}
+  Let $f=(f_1, \ldots, f_p)^T$ be a vector of linearly independent real functions on $X$, whose range is compact in $\mathbb{R}^p$. Let $S$ be any Borel field of subsets of $X$ containing every finite subset of $X$ and $\xi$ a probability measure on S with finite support.\\
+  Define $M(\xi) = \left( m_{ij}(\xi) \right)$ with $m_{ij}(\xi)=\int_{X}f_i(x)f_j(x)\xi(dx)$ and $d(x;\xi)=f(x)^T\left[M(\xi)\right]^{-1}f(x)$ if $M(\xi)$ is \textbf{invertible}. Then, TFAE\\
+  \begin{enumerate}
+    \item $\xi^* = \argmin_{\xi}\left| M(\xi) \right|$
+    \item $f(x)^T\left[M(\xi^*)\right]^{-1}f(x) \leq p, \forall x \in X$\\
+    with equality holding at $x_i^*$s in $\xi^*=\left( x_1^*, \ldots , x_k^*, w_1^*, \ldots , w_k^* \right)$
+  \end{enumerate}
+\end{frame}
+
+\section{Particle Swarm Optimization}
+
+%% 9 
+\begin{frame}{Particle Swarm Optimization}
+  Particle Swarm Optimization (PSO) is a nature-inspired algorithm originating from research in fish and swarm movement behavior.\\
+  \vspace{3mm}
+  Benefits of PSO include the ability to find the optimal solution to a complex problem or get close to the optimal solution quickly \textbf{without requiring any assumption on the objective function}. $\Rightarrow$ \textbf{flexible}\\
+  \vspace{3mm}
+  However, the method still lacks a firm theoretical justification to date\\
+  and is under-utilized in statistical literature.\\
+  \vspace{3mm}
+  The idea of PSO is as follows,\\
+  \begin{enumerate}
+    \item A number of particles are scattered onto the search domain.
+    \item Each particle investigates the search domain and shares knowledge with the group.
+    \item Possible solution is obtained from the group's aggregated knowledge.
+  \end{enumerate}
+\end{frame}
+
+%%10
+\begin{frame}{PSO Algorithm}
+  Update Equation:\\
+  \begin{flalign}
+    v_i^{t+1} &= \tau_t v_i^t + \gamma_1 \beta_1 \odot (p_i^t-z_i^t)+ \gamma_2 \beta_2 \odot (p_g^t-z_i^t),\\
+    z_i^{t+1} &= z_i^t + v_i^{t+1}.
+  \end{flalign}
+  \begin{itemize}
+    \item $h(\cdot)$: objective function (fitness) to minimize
+    \item $z_i^t$: position of the $i$th particle at time $t$
+    \item $v_i^t$: velocity of the $i$th particle at time $t$
+    \item $p_i^t$: $\argmin_{z_i^s, 1 \leq s \leq t} \left\{ h(z_i^s) \right\}$, personal best position
+    \item $p_g^t$: $\argmin_{z_m^s, 1 \leq m \leq k, 1 \leq s \leq t} \left\{ h(z_m^s) \right\}$, global best position
+    \item $\odot$: Hadamard product operator
+  \end{itemize}
+\end{frame}
+
+%%11
+\begin{frame}{PSO Algorithm}
+  Update Equation:\\
+  \begin{flalign*}
+    v_i^{t+1} &= \tau_t v_i^t + \gamma_1 \beta_1 \odot (p_i^t-z_i^t)+ \gamma_2 \beta_2 \odot (p_g^t-z_i^t),\\
+    z_i^{t+1} &= z_i^t + v_i^{t+1}.
+  \end{flalign*}
+  \begin{itemize}
+    \item $\tau_t$: inertia wieght at time $t$, const. or decreasing between (0,1)
+    \item $\gamma_1$: cognitive learning parameter
+    \item $\gamma_2$: social learning parameter
+    \item $\beta_1, \beta_2$: random vector
+  \end{itemize}
+  \vspace{3mm}
+  In this paper, learning parameter was $\gamma_1=\gamma_2=2$ fixed and components of $\beta_1, \beta_2$ was sampled i.i.d from $U(0,1)$ at each iteration and particle.
+\end{frame}
+
+%%12
+\begin{frame}{PSO Algorithm}
+  PSO pseudo-code for flock size $n$ (i.e. $n$ particles in the swarm)
+  \begin{flalign*}  
+    \text{(1) }&\text{Initialize particles}\\
+    &\text{(1.1) Initiate position } x_i^0 \text{ and velocities } v_i^0 \text{ for } i=1,\ldots,n\\
+    &\text{(1.2) Calculate the fitness values } h(x_i^0) \text{ for } i=1,\ldots,n\\
+    &\text{(1.3) Determine the personal best positions } p_i^0=x_i^0\\
+    &\text{and the global position } p_g^0 \text{ for } i=1,\ldots,n\\
+    \text{(2) }&\text{Repeat until stopping criteria are satisfied,}\\
+    &\text{(2.1) Calculate particle velocity according to Eq. (1)}\\
+    &\text{(2.2) Update particle position according to Eq. (2)}\\
+    &\text{(2.3) Project particle back to the search space}\\
+    &\text{(2.4) Calculate the fitness values } h(x_i) \text{ for } v_i \text{ for } i=1,\ldots,n\\
+    &\text{(2.5) Update personal and global best positions } p_i, (1 \leq i \leq n) \text{ and } p_g\\
+    \text{(3) }&\text{Output } p_g = \argmin_x\left\{ h(x) \right\} \text{with \emph{gbest}}=h(p_g)
+  \end{flalign*}
+\end{frame}
+
+\section{Application of PSO in Optimal Design}
+
+%%13
+\begin{frame}{Application of PSO in Optimal Design}
+  Update Equation:\\
+  \begin{flalign*}
+    v_i^{t+1} &= \tau_t v_i^t + \gamma_1 \beta_1 \odot (p_i^t-z_i^t)+ \gamma_2 \beta_2 \odot (p_g^t-z_i^t),\\
+    z_i^{t+1} &= z_i^t + v_i^{t+1}.
+  \end{flalign*}
+  \begin{alignat*}{3}
+    z_i^t &\leftarrow \xi_i^t &&= (x_{i1}^t,\ldots,x_{ik}^t,w_{i1}^t,\ldots,w_{ik}^t)\\
+    \vspace{6mm}
+    h(x) &\leftarrow g_{D}(\xi;\theta_0) &&= \left| Var\left(\hat{\theta}_{MLE}(\xi)\right) \right| = \left| I(\xi;\theta_0)^{-1} \right| ,(D\text{-optimal}) \\
+    h(x) &\leftarrow g_{c}(\xi;\theta_0) &&= \left| Var\left(c\left(\hat{\theta}_{MLE}(\xi)\right)\right) \right| ,(c\text{-optimal}) \\
+    & &&\approx \left| \left(\frac{\partial c(\theta)}{\partial\theta}\Big|_{\theta=\theta_0}\right) I(\xi;\theta_0)^{-1} \left(\frac{\partial c(\theta)}{\partial\theta}\Big|_{\theta=\theta_0}\right)^T \right| \\
+  \end{alignat*}
+\end{frame}
+
+%%14
+\begin{frame}{Application of PSO in Optimal Design}
+   Nominal value $\theta_0$ of $\theta$ needs to be specified before running the algorithm.\\
+   In most cases, LS estimator is used as the nominal value of $\theta_0$.\\
+   Design space, or the search space of $x_i$ also needs to be pre-specified.\\
+   \vspace{3mm}
+   Optimality of designs is checked by equivalence theorem for $D$-optimal designs with invertible Information matrix.\\
+   \vspace{3mm}
+   When equivalence theorem is not available, convergence is assumed when observed optimum does not change by more than $10^{-7}$ deviation from the known optimum.
+\end{frame}
+
+\section{Examples}
+
+%%15
+\begin{frame}{Examples: Compartment Model, $D$-optimal}
+  Drug concentration$\left(Y\right)$ is modeled as a function$\left(\eta(\cdot,\theta)\right)$ of time$\left(x\right)$\\
+  with independent normal errors$\left(\varepsilon \sim \mathcal{N}(0,\sigma^2)\right).$
+  \begin{flalign*}
+    &Y|X=x \sim \mathcal{N}\left(\eta(x,\theta),\sigma^2\right), \sigma^2 known \\
+    \vspace{3mm}
+    &\eta(x,\theta)=\theta_3 \left\{ \exp(-\theta_2x)-\exp(-\theta_1x) \right\}, x>0\\
+    \vspace{3mm}
+    &I(\xi;\theta_0) \propto \sum_{i=1}^k \left\{ w_i \left(\frac{\partial \eta(x_i;\theta)}{\partial\theta}\Big|_{\theta=\theta_0}\right)  \left(\frac{\partial \eta(x_i;\theta)}{\partial\theta}\Big|_{\theta=\theta_0}\right)^T \right\}\\
+    \vspace{3mm}
+    &g_D(\xi;\theta_0)=\left| I(\xi;\theta_0)^{-1} \right| \\
+  \end{flalign*}
+\end{frame}
+
+%%16
+\begin{frame}{Examples: Compartment Model, $D$-optimal}
+  \begin{flalign*}
+    &D\text{-optimal design:}\\
+    &\text{Find } \xi \text{ s.t. minimize }g_D(\xi;\theta_0) \Leftrightarrow \text{Find } \xi \text{ s.t. maximize } \left| I(\xi;\theta_0) \right|
+  \end{flalign*}
+  \begin{itemize}
+    \item $\theta_0 = (0.05884, 4.298, 21.8)$
+    \item $n\text{ (flock size)}=100$
+    \item $\text{max iteration} = 100$
+    \item $k=3$
+    \item $\xi = (x_1,\ldots,x_k,w_1,\ldots,w_k),$\\
+    $x_i \in [0,30], w_i \geq 0, \forall i \text{ and } \sum_{i=1}^k w_i = 1$
+  \end{itemize}
+  \vspace{3mm}
+  $\Rightarrow$ $\xi^*=(0.228773, 1.38858, 18.4168, 0.333335, 0.333332, 0.333333)$
+\end{frame}
+
+%%17
+\begin{frame}{Examples: Compartment Model, $D$-optimal}
+  Equivalence plot for $D$-optimal design:\\
+  \vspace{3mm}
+  $\left(\frac{\partial \eta(x;\theta)}{\partial\theta}\Big|_{\theta=\theta_0}\right)^T I(\xi^*;\theta_0)^{-1} \left(\frac{\partial \eta(x;\theta)}{\partial\theta}\Big|_{\theta=\theta_0}\right) - 3 \leq 0 , \forall x \in [0,30]$
+  \begin{center}
+    \includegraphics[scale=0.5]{a.png}
+  \end{center}
+\end{frame}
+
+%%18
+\begin{frame}{Examples: Compartment Model, $c$-optimal (1)}
+  One of the main question of interest in compartment model is\\
+  time to max concentration of the drug
+  \begin{flalign*}
+    c(\theta) &=\argmax_x \eta(x,\theta)\\
+    &=\frac{\ln\theta_1-\ln\theta_2}{\theta_1-\theta_2}\\
+    \frac{\partial c(\theta)}{\partial \theta} &= \left(\frac{1-\frac{\theta_2}{\theta_1}-\ln\theta_1+\ln\theta_2}{(\theta_1-\theta_2)^2}, \frac{1-\frac{\theta_1}{\theta_2}+\ln\theta_1-\ln\theta_2}{(\theta_1-\theta_2)^2}, 0\right)^T\\
+    g_c(\xi;\theta_0) &= \left(\frac{\partial c(\theta)}{\partial \theta}\Big|_{\theta=\theta_0}\right)^T I(\xi;\theta_0)^{-} \left(\frac{\partial c(\theta)}{\partial \theta}\Big|_{\theta=\theta_0}\right)\\
+  \end{flalign*}
+\end{frame}
+
+%%19
+\begin{frame}{Examples: Compartment Model, $c$-optimal (1)}
+  \begin{flalign*}
+    &c\text{-optimal design: find } \xi \text{ s.t. minimize }g_c(\xi;\theta_0)
+  \end{flalign*}
+  \begin{itemize}
+    \item $n\text{ (flock size)}= 200$
+    \item $\text{max iteration} = 1000$
+    \item $k=2$
+    \item $\xi = (x_1,\ldots,x_k,w_1,\ldots,w_k),$\\
+    $x_i \in [0,10], w_i \geq 0, \forall i \text{ and } \sum_{i=1}^k w_i = 1$
+  \end{itemize}
+  \vspace{3mm}
+  Note that information matrix is singular when $k=2$. \\
+  Instead of using generalized inverse, the author replaced $I(\xi;\theta_0)$ with invertible matrix $I_{\epsilon}(\xi;\theta_0)=I(\xi;\theta_0)+\epsilon \mathrm{I}_3, \epsilon=10^{-6}$.\\
+  \vspace{3mm}
+  $\Rightarrow$ $\xi^*=(3.56584, 0.179287, 0.393841, 0.606159)$
+\end{frame}
+
+%%20
+\begin{frame}{Examples: Compartment Model, $c$-optimal (2)}
+  Another question of interest in compartment model is\\
+  the area under the curve(AUC)
+  \begin{flalign*}
+    c(\theta) &=\int_0^{\infty} \eta(x,\theta) dx\\
+    &=\frac{\theta_3}{\theta_2}-\frac{\theta_3}{\theta_1}\\
+    \frac{\partial c(\theta)}{\partial \theta} &= \left(\frac{\theta_3}{\theta_1^2}, -\frac{\theta_3}{\theta_2^2}, \frac{1}{\theta_2}-\frac{1}{\theta_1} \right)^T\\
+    g_c(\xi;\theta_0) &= \left(\frac{\partial c(\theta)}{\partial \theta}\Big|_{\theta=\theta_0}\right)^T I(\xi;\theta_0)^{-} \left(\frac{\partial c(\theta)}{\partial \theta}\Big|_{\theta=\theta_0}\right)\\
+  \end{flalign*}
+\end{frame}
+
+%%21
+\begin{frame}{Examples: Compartment Model, $c$-optimal (2)}
+  \begin{flalign*}
+    &c\text{-optimal design: find } \xi \text{ s.t. minimize }g_c(\xi;\theta_0)
+  \end{flalign*}
+  \begin{itemize}
+    \item $k=2$
+    \item $n\text{ (flock size)}=100$
+    \item $\text{max iteration} = 1000$
+    \item $\xi = (x_1,\ldots,x_k,w_1,\ldots,w_k),$\\
+    $x_i \in [0,20], w_i \geq 0, \forall i \text{ and } \sum_{i=1}^k w_i = 1$
+  \end{itemize}
+  \vspace{3mm}
+  $\Rightarrow$ $\xi^*= (0.23267, 17.634, 0.0135021, 0.986498)$
+\end{frame}
+
+%%23
+\begin{frame}{Examples: Compartment Model, $c$-optimal (2)}
+  One of the merits of using PSO is that when the \# of design points $k$ is over-specified, it can automatically find the optimal design directly.\\
+  \vspace{3mm}
+  \begin{itemize}
+    \item $k=3$, $n\text{ (flock size)}=200$, $\text{max iteration} = 500$\\
+    $\Rightarrow$ $\xi^*= (0.2327, 17.634, 20.0, 0.0135, 0.9865, 0.0)$ (Simulation)\\
+    $\Rightarrow$ $\xi^*= (0.2337, 17.6269, 17.7176, 0.0135, 0.8983, 0.0882)$ (Paper)\\
+    \item $k=3$, $n\text{ (flock size)}=200$, $\text{max iteration} = 1000$\\
+    $\Rightarrow$ $\xi^*= (0.2327, 17.634, 20.0, 0.0135, 0.9865, 0.0)$ (Simulation)\\
+    $\Rightarrow$ $\xi^*= (0.2332, 17.6336, 17.6626, 0.0135, 0.9535, 0.03296)$ (Paper)\\
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Examples: Compartment Model, $c$-optimal (2)}
+  Some more simulations,
+  \begin{itemize}
+    \item $k=4$, $n\text{ (flock size)}=100$, $\text{max iteration} = 100$\\
+    $\Rightarrow$ $\xi^*= (0.2337, 17.6126, 17.6464, 20.0, 0.0136, 0.3353, 0.6510, 0.0)$\\
+    \item $k=4$, $n\text{ (flock size)}=200$, $\text{max iteration} = 500$\\
+    $\Rightarrow$ $\xi^*= (0.0, 0.2327, 17.634, 20.0, 0.0, 0.0135, 0.9865, 0.0)$\\
+    \item $k=5$, $n\text{ (flock size)}=200$, $\text{max iteration} = 500$\\
+    $\Rightarrow$ $\xi^*= [0.0, 0.2327, 17.634, 20.0, 20.0, 0, 0.0135, 0.9865, 0.0, 0.0)$\\
+  \end{itemize}
+  \vspace{3mm}
+  From the simulation, it is observed that when $k$ is too large, 
+  \begin{itemize}
+    \item Neighboring design points converge to optimal design point
+    \item Unnecessary design points converge to the boundary of design space\\
+    and their weights converge to 0
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Examples: Quadratic Logistic Model, $D$-optimal}
+  Consider a binary model taking values 0 or 1 with probability $p(x;\theta)$.\\
+  \begin{flalign*}
+    Y|X=x &\sim Ber\left( p(x;\theta) \right)\\
+    p(x;\theta) &= \frac{\exp[\alpha+\beta(x-\mu)^2]}{1+\exp[\alpha+\beta(x-\mu)^2]}\\
+    f(x;\theta) &= \alpha+\beta(x-\mu)^2\\
+    \frac{\partial f(x;\theta)}{\partial \theta} &= \left(1, (x_i-\mu)^2, 2\beta(\mu-x_i)\right)^T\\
+    I(\xi;\theta_0) &= \sum_{i=1}^k \left\{ w_i p(x_i;\theta_0) \left( 1-p(x_i;\theta_0) \right) \left( \frac{\partial f(x;\theta)}{\partial \theta}\Big|_{\theta_0} \right) \left( \frac{\partial f(x;\theta)}{\partial \theta}\Big|_{\theta_0} \right)^T \right\}
+  \end{flalign*}
+\end{frame}
+
+%%16
+\begin{frame}{Examples: Quadratic Logistic Model, $D$-optimal}
+  \begin{center}
+    $D$-optimal design: find $\xi \text{ s.t. maximize } \left| I(\xi;\theta_0) \right|$
+  \end{center}
+  \begin{itemize}
+    \item $\theta_0 = (\alpha_0, \beta_0, \mu_0) = (2,3,0)$
+    \item $n\text{ (flock size)}=128$
+    \item $\text{max iteration} = 150$
+    \item $k=3$
+    \item $\xi = (x_1,\ldots,x_k,w_1,\ldots,w_k),$\\
+    $x_i \in [-3,1], w_i \geq 0, \forall i \text{ and } \sum_{i=1}^k w_i = 1$
+  \end{itemize}
+  \vspace{3mm}
+  $\Rightarrow$ $\xi^*= (-0.726988, 0, 0.726988, 0.333333, 0.333333, 0.333333)$
+\end{frame}
+
+\section{Discussion}
+
+\begin{frame}{Discussion}
+  PSO is a powerful and flexible method for solving optimization problems that can be applied to a variety of problems.\\
+  \vspace{3mm}
+  Learning parameter in PSO did not seem to matter much.\\
+  Setting $\gamma_1=\gamma_2=2$ worked well in all the problems.\\
+  \vspace{3mm}
+  Main problem of PSO is determining the \# of iteration and flock size.\\
+  \begin{itemize}
+    \item Large flock size will result slow iteration.
+    \item Small flock size will require longer iteration.\\
+    ($\because$ not enough particles to cover the design space)
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Reference}
+  \begin{itemize}
+    \item Berger, M. P., \& Wong, W. K. (2009). An introduction to optimal designs for social and biomedical research (Vol. 83). John Wiley \& Sons.
+    \item Qiu, J., Chen, R. B., Wang, W., \& Wong, W. K. (2014). Using animal instincts to design efficient biomedical studies via particle swarm optimization. Swarm and evolutionary computation, 18, 1-10.
+    \item Kiefer, J., \& Wolfowitz, J. (1960). The equivalence of two extremum problems. Canadian Journal of Mathematics, 12, 363-366.
+  \end{itemize}
+\end{frame}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+% Placing a * after \section means it will not show in the
+% outline or table of contents.
+
+%\section*{Summary}
+%
+%\begin{frame}{Summary}
+%  \begin{itemize}
+%  \item
+%    The \alert{first main message} of your talk in one or two lines.
+%  \item
+%    The \alert{second main message} of your talk in one or two lines.
+%  \item
+%    Perhaps a \alert{third message}, but not more than that.
+%  \end{itemize}
+%  
+%  \begin{itemize}
+%  \item
+%    Outlook
+%    \begin{itemize}
+%    \item
+%      Something you haven't solved.
+%    \item
+%      Something else you haven't solved.
+%    \end{itemize}
+%  \end{itemize}
+%\end{frame}
+
+
+
+% All of the following is optional and typically not needed. 
+
+%\appendix
+%\section<presentation>*{\appendixname}
+%\subsection<presentation>*{For Further Reading}
+
+%\begin{frame}[allowframebreaks]
+%  \frametitle<presentation>{For Further Reading}
+    
+%  \begin{thebibliography}{10}
+    
+%  \beamertemplatebookbibitems
+  % Start with overview books.
+
+%  \bibitem{Author1990}
+%    A.~Author.
+%    \newblock {\em Handbook of Everything}.
+%    \newblock Some Press, 1990.
+ 
+    
+%  \beamertemplatearticlebibitems
+  % Followed by interesting articles. Keep the list short. 
+
+%  \bibitem{Someone2000}
+%    S.~Someone.
+%    \newblock On this and that.
+%    \newblock {\em Journal of This and That}, 2(1):50--100,
+%    2000.
+%  \end{thebibliography}
+%\end{frame}
+
+\end{document}
+
